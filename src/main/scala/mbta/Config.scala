@@ -24,8 +24,8 @@ object Config {
   : Resource[F, Config[F]] = for {
     logCalls <- Resource
                   .liftF(std.readEnv[F]("LOG_CALLS")
-                  .recover { case _ => "false" })
-                  .flatMap(s => Resource.liftF(maybeBoolean[F](s)))
+                    .recover { case _ => "false" })
+    logCalls <- Resource.liftF(maybeBoolean[F](logCalls))
     client   <- BlazeClientBuilder[F](E)
                   .resource
                   .map(Logger[F](logHeaders = logCalls, logBody = logCalls))
