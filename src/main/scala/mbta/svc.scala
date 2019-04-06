@@ -40,8 +40,6 @@ object svc {
       /*
       The API only allows you to include stops if you are filtering them, so
       we need to traverse each result.
-
-      todo see if this can be chunked for perf
        */
       def getStops(route: RouteResource): IO[Pair] =
         for {
@@ -67,11 +65,11 @@ object svc {
 
         routeMap  = stopMap
           .flatMap(flattenPairs)
-          .groupByNem(_._2.id.toOption.get) // todo this is naughty
+          .groupByNem(_._2.attributes.map(_.name).toOption)
           .filter(rs => rs.size >= 2)
           .mapValues(pluckRouteIds)
           .map(p =>
-            s"${p._1} => ${p._2
+            s"${p._1.fold("UNKNOWN")(identity)} => ${p._2
               .mkString_("[", "|", "]")}" // todo show
           )
           .toList
