@@ -28,6 +28,7 @@ object svc {
     Kleisli { implicit service =>
 
       type Pair = (RouteResource, NonEmptyList[StopResource])
+      type FlatPair = (RouteResource, StopResource)
 
       /*
       2-(a/b) the route with the most and least stops can be established as a
@@ -48,6 +49,10 @@ object svc {
           stops <- service.api.stopsFor(id)
         } yield route -> stops
 
+      def flattenPairs(p: Pair): NonEmptyList[FlatPair] = p._2.map(s => p._1 -> s)
+
+      def pluckRouteIds(rs: NonEmptyList[FlatPair]): List[String] = rs.map(_._1.id.toOption.get).toList
+
       for {
         routes   <- service.api.routesOf(LightRail, HeavyRail)
         stopMap  <- routes.traverse(getStops)
@@ -61,11 +66,16 @@ object svc {
         minSize   = min._2.size
 
         routeMap  = stopMap
-          .flatMap((p: Pair) => p._2.map(s => p._1 -> s))
-          .groupByNem(_._2.id.toOption.get)
+          .flatMap(flattenPairs)
+          .groupByNem(_._2.id.toOption.get) // todo this is naughty
           .filter(rs => rs.size >= 2)
-          .map(rs => rs._1 -> rs._2.map(_._1.id.toOption.get).toList)
-          .toMap
+          .mapValues(pluckRouteIds)
+          .map(p =>
+            s"${p._1} => ${p._2
+              .mkString_("[", "|", "]")}" // todo show
+          )
+          .toList
+          .mkString_("\n", "\n", "\n") // todo show
 
         result    =
           show"""
@@ -76,7 +86,7 @@ object svc {
              | Fewest stops: $minId ($minSize)
              |
              |Stops with more than 2 routes:
-             |${routeMap.map(p => s"${p._1} => ${p._2.mkString_("[", "|", "]")}").toList.mkString_("\n", "\n", "\n")}
+             |$routeMap
              |***
            """.stripMargin
       } yield result
