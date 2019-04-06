@@ -1,9 +1,12 @@
 package jsonapi
 
-import cats.{ApplicativeError, Foldable}
+import cats.ApplicativeError
 import cats.implicits._
 import io.circe._
 
+/*
+A traversable model describing the JSON-API specification of a resource
+ */
 trait ResourceOf[F[_], A] {
 
   /*
@@ -57,7 +60,8 @@ trait ResourceOf[F[_], A] {
   Validates the instance against the structural and named spec
    */
   def validated(implicit
-                A: ApplicativeError[F, Throwable]): Decoder.Result[ResourceOf[F, A]] =
+                A: ApplicativeError[F, Throwable])
+  : Decoder.Result[ResourceOf[F, A]] =
     (id *> maybeType *> attributes).as(this)
 }
 
@@ -66,7 +70,5 @@ object ResourceOf {
   implicit def resourceOfDecoder[F[_], A](implicit
                                           R: ResourceOf[F, A],
                                           A: ApplicativeError[F, Throwable])
-  : Decoder[ResourceOf[F, A]] = Decoder.instance { cursor =>
-    R.validated
-  }
+  : Decoder[ResourceOf[F, A]] = Decoder.instance(_ => R.validated)
 }

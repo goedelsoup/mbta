@@ -1,5 +1,6 @@
 package mbta.api
 
+import cats.{ApplicativeError, FlatMap}
 import cats.data.NonEmptyList
 import cats.effect.Sync
 import cats.implicits._
@@ -28,39 +29,36 @@ object v3 {
 
        */
       def routes: ResourceCollectionF[Route] =
-        C.expect[Json](Request[F](
+        extractResources[F, Route](Route.of)(C.expect[Json](Request[F](
           method = GET,
           uri = root / "routes"
-        ))
-        .flatMap(_.hcursor
-          .downField("data")
-          .as[NonEmptyList[Json]]
-          .flatMap(_.traverse(Route.of(_).validated))
-          .liftTo[F])
+        )))
 
       /*
 
        */
       def routesOf(rs: RouteClass*): ResourceCollectionF[Route] =
-        C.expect[Json](Request[F](
+        extractResources[F, Route](Route.of)(C.expect[Json](Request[F](
           method = GET,
           uri = root / "routes" +? ("filter[type]", rs.toList.map(_.id.show).intercalate(","))
-        ))
-        .flatMap(_.hcursor
-          .downField("data")
-          .as[NonEmptyList[Json]]
-          .flatMap(_.traverse(Route.of(_).validated))
-          .liftTo[F])
+        )))
 
       def stopsFor(rs: String*): ResourceCollectionF[Stop] =
-        C.expect[Json](Request[F](
+        extractResources[F, Stop](Stop.of)(C.expect[Json](Request[F](
           method = GET,
           uri = root / "stops" +? ("filter[route]", rs.toList.intercalate(","))
-        ))
-        .flatMap(_.hcursor
-          .downField("data")
-          .as[NonEmptyList[Json]]
-          .flatMap(_.traverse(Stop.of(_).validated))
-          .liftTo[F])
+        )))
     }
+
+  def extractResources[F[_], A](fa: Json => ResourceOf[F, A])
+                               (result: F[Json])
+                               (implicit
+                                F: FlatMap[F],
+                                A: ApplicativeError[F, Throwable])
+  : F[NonEmptyList[ResourceOf[F, A]]] =
+    result >>= (_.hcursor
+      .downField("data")
+      .as[NonEmptyList[Json]]
+      .flatMap(_.traverse(fa(_).validated))
+      .liftTo[F])
 }
