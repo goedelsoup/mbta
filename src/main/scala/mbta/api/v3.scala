@@ -25,18 +25,12 @@ object v3 {
   def apply[F[_]: Sync](C: Client[F]): ApiAlg[F] =
     new ApiAlg[F] with Http4sDsl[F] {
 
-      /*
-
-       */
       def routes: ResourceCollectionF[Route] =
         extractResources[F, Route](Route.of)(C.expect[Json](Request[F](
           method = GET,
           uri = root / "routes"
         )))
 
-      /*
-
-       */
       def routesOf(rs: RouteClass*): ResourceCollectionF[Route] =
         extractResources[F, Route](Route.of)(C.expect[Json](Request[F](
           method = GET,
@@ -50,6 +44,10 @@ object v3 {
         )))
     }
 
+  /*
+  Tap into the `data` field of the JSON-API record and retrieve
+  a non-empty list of resources.
+   */
   def extractResources[F[_], A](fa: Json => ResourceOf[F, A])
                                (result: F[Json])
                                (implicit
