@@ -60,6 +60,13 @@ object svc {
         minId    <- min._1.id.liftTo[IO]
         minSize   = min._2.size
 
+        routeMap  = stopMap
+          .flatMap((p: Pair) => p._2.map(s => p._1 -> s))
+          .groupByNem(_._2.id.toOption.get)
+          .filter(rs => rs.size >= 2)
+          .map(rs => rs._1 -> rs._2.map(_._1.id.toOption.get).toList)
+          .toMap
+
         result    =
           show"""
              |***
@@ -69,7 +76,7 @@ object svc {
              | Fewest stops: $minId ($minSize)
              |
              |Stops with more than 2 routes:
-             |  TODO
+             |${routeMap.map(p => s"${p._1} => ${p._2.mkString_("[", "|", "]")}").toList.mkString_("\n", "\n", "\n")}
              |***
            """.stripMargin
       } yield result
