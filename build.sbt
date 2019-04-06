@@ -53,11 +53,7 @@ lazy val mbta = (project in file("."))
 
     addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.6"),
     addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.2.4"),
-
-    initialCommands in console := """
-                                    |import atto._, Atto._
-                                    |import cats.implicits._
-        """.stripMargin,
+    
     dockerBaseImage := "adoptopenjdk/openjdk10:jdk-10.0.2.13-alpine-slim",
     dockerUpdateLatest := true,
     packageName in Docker := "goedelsoup/mbta",
