@@ -16,11 +16,6 @@ trait ApiAlg[F[_]] {
   /*
 
    */
-  def routes: ResourceCollectionF[Route]
-
-  /*
-
-   */
   def routesOf(rs: RouteClass*): ResourceCollectionF[Route]
 
   /*

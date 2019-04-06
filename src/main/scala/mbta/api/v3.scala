@@ -25,12 +25,6 @@ object v3 {
   def apply[F[_]: Sync](C: Client[F]): ApiAlg[F] =
     new ApiAlg[F] with Http4sDsl[F] {
 
-      def routes: ResourceCollectionF[Route] =
-        extractResources[F, Route](Route.of)(C.expect[Json](Request[F](
-          method = GET,
-          uri = root / "routes"
-        )))
-
       def routesOf(rs: RouteClass*): ResourceCollectionF[Route] =
         extractResources[F, Route](Route.of)(C.expect[Json](Request[F](
           method = GET,
