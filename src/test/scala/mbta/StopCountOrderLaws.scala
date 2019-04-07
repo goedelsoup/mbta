@@ -1,0 +1,5 @@
+package mbta
+
+object StopCountOrderLaws {
+
+}

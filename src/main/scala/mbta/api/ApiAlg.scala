@@ -21,5 +21,5 @@ trait ApiAlg[F[_]] {
   /*
 
    */
-  def stopsFor(rs: String*): ResourceCollectionF[Stop]
+  def stopsFor(rs: String): ResourceCollectionF[Stop]
 }

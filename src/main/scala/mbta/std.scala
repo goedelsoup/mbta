@@ -1,7 +1,7 @@
 package mbta
 
 import cats.{ApplicativeError, Show}
-import cats.effect.{IO, Sync}
+import cats.effect.Sync
 import cats.implicits._
 
 object std {

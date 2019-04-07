@@ -1,9 +1,13 @@
 package mbta
 
 import cats.ApplicativeError
+import cats.data.NonEmptyList
 import cats.effect._
 import cats.implicits._
+import io.chrisdavenport.mules._
+import jsonapi.ResourceOf
 import mbta.api._
+import mbta.api.domain.{Route, RouteClass, Stop}
 import org.http4s.client.blaze.BlazeClientBuilder
 import org.http4s.client.middleware.Logger
 
@@ -22,15 +26,22 @@ object Config {
                  T: Timer[F],
                  E: ExecutionContext)
   : Resource[F, Config[F]] = for {
-    logCalls <- Resource
-                  .liftF(std.readEnv[F]("LOG_CALLS")
-                    .recover { case _ => "false" })
-    logCalls <- Resource.liftF(maybeBoolean[F](logCalls))
-    client   <- BlazeClientBuilder[F](E)
-                  .resource
-                  .map(Logger[F](logHeaders = logCalls, logBody = logCalls))
+
+    routeCache <- Resource.liftF(MemoryCache
+      .createMemoryCache[F, Seq[RouteClass], NonEmptyList[ResourceOf[F, Route]]](None))
+
+    stopCache  <- Resource.liftF(MemoryCache
+      .createMemoryCache[F, String, NonEmptyList[ResourceOf[F, Stop]]](None))
+
+    logCalls  <- Resource
+                   .liftF(std.readEnv[F]("LOG_CALLS")
+                     .recover { case _ => "false" })
+    logCalls  <- Resource.liftF(maybeBoolean[F](logCalls))
+    client    <- BlazeClientBuilder[F](E)
+                   .resource
+                   .map(Logger[F](logHeaders = logCalls, logBody = logCalls))
   } yield
-    Config[F](v3(client))
+    Config[F](v3(client, routeCache, stopCache))
 
   /*
   Lifts a string into a F[Boolean], raising an exception on invalid strings

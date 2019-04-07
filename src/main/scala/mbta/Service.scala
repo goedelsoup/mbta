@@ -10,7 +10,7 @@ import mbta.std._
 
 import scala.collection.SortedMap
 
-object svc {
+object Service {
 
   type ServiceK[A] = Kleisli[IO, Config[IO], A]
 
@@ -99,8 +99,8 @@ object svc {
   The API only allows you to include stops if you are filtering them, so
   we need to traverse each result.
    */
-  def getStops(route: RouteResource)
-              (implicit service: Config[IO]): IO[Pair] =
+  private[this] def getStops(route: RouteResource)
+                            (implicit service: Config[IO]): IO[Pair] =
     for {
       id <- route.id.liftTo[IO]
       stops <- service.api.stopsFor(id)
@@ -109,8 +109,9 @@ object svc {
   /*
   Return a map of stops to routes which match a predicate on either record
    */
-  def groupRoutesForStopsWhere(fa: NonEmptyList[FlatPair] => Boolean)
-                              (sm: NonEmptyList[Pair]): SortedMap[Option[String], List[String]] = sm
+  private[this] def groupRoutesForStopsWhere(fa: NonEmptyList[FlatPair] => Boolean)
+                                            (sm: NonEmptyList[Pair])
+  : SortedMap[Option[String], List[String]] = sm
     .flatMap(flattenPairs)
     .groupByNem(_._2.attributes.map(_.name).toOption)
     .filter(fa)
@@ -119,17 +120,18 @@ object svc {
   /*
   Flatten a Route => Nel[Stop] map so that we can pivot it on stop information
    */
-  def flattenPairs(p: Pair): NonEmptyList[FlatPair] = p._2.map(s => p._1 -> s)
+  private[this] def flattenPairs(p: Pair): NonEmptyList[FlatPair] =
+    p._2.map(s => p._1 -> s)
 
   /*
   Extract the route's long name from a record
    */
-  def toRouteNames(rs: NonEmptyList[FlatPair]): List[String] = rs
+  private[this] def toRouteNames(rs: NonEmptyList[FlatPair]): List[String] = rs
     .map(_._1.attributes
       .map(_.longName)
-      .toOption
-      .get) // todo fix
+      .toOption)
     .toList
+    .flatten
 
   /*
   2-(a/b) the route with the most and least stops can be established as a
