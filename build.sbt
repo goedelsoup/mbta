@@ -46,7 +46,7 @@ lazy val mbta = (project in file("."))
 
       "org.typelevel" %% "mouse" % "0.20",
 
-      "org.scalatest" % "scalatest_2.12" % "3.0.5" % Test
+      "org.scalatest" %% "scalatest" % "3.0.5" % Test
     ) ++ Seq(
       "is.cir" %% "ciris-cats",
       "is.cir" %% "ciris-cats-effect",
